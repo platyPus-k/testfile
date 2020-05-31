@@ -1,9 +1,3 @@
-// ゲームの時間
-const GAME_FPS = 1000/60;
-
-// スクリーンのサイズ
-const SCREEN_SIZE_W = 256;
-const SCREEN_SIZE_H = 224;
 
 // 仮想画面を有効化
 let vcan = document.createElement("canvas");
@@ -22,33 +16,93 @@ can.width = SCREEN_SIZE_W*3;
 can.height = SCREEN_SIZE_H*3;
 
 // アップコンバートを無効化
-vcon.mozimageSmoothingEnabled    = false;
-vcon.webkitimageSmoothingEnabled = false;
-vcon.msimageSmoothingEnabled     = false;
-vcon.imageSmoothingEnabled       = false;
+con.mozimageSmoothingEnabled    = false;
+con.webkitimageSmoothingEnabled = false;
+con.msimageSmoothingEnabled     = false;
+con.imageSmoothingEnabled       = false;
 
 // フレームレート維持
 let frameCount = 0;
 let startTime;
 
+// マップのオブジェクト
+let field = new Field();
+
+// マリオのオブジェクト
+let ojisan = new Ojisan(100,100);
+
+// ブロックのオブジェクト
+let block = [];
+
+// アイテムのオブジェクト
+let item = [];
+
 // imgオブジェクトを作成してスプライトデータを読み込む　オンロードで起動させる
 let chImg = new Image();
 chImg.src = "sprite.png";
 
+// 共通のアップデート
+function updateObj(obj)
+{
+    // スプライトのブロック更新
+     for(let i=obj.length-1; i>=0; i--)
+     {
+         obj[i].update();
+         if(obj[i].kill)
+         {
+            obj.splice(i,1);
+         }
+     }
+}
+
+// 共通の描画
+function drawObj(obj)
+{
+    for(let i=0; i<obj.length; i++)
+    {
+        obj[i].draw();
+    }
+}
+
 // 更新処理
 function update()
 {
+    // マップの更新
+    field.update();
 
+    //ブロックの更新
+    updateObj(block);
+    
+    // アイテムの更新
+    updateObj(item);
+    
+    // マリオの更新
+    ojisan.update();
+}
+
+// スプライトを描画
+function drawSprite(snum,x,y)
+{
+    let sx = (snum&15)<<4;
+    let sy = (snum>>4)<<4;
+    vcon.drawImage(chImg,sx,sy,16,32, x,y,16,32);
 }
 
 //　描画処理
 function draw()
 {
-    // 色を指定して四角形を描画
+    // 色を指定して四角形(バックスクリーン)を描画
     vcon.fillStyle = "#66AAFF";
     vcon.fillRect(0,0,SCREEN_SIZE_W,SCREEN_SIZE_H);
-    vcon.drawImage(chImg,0,0,16,32, 50,15,16,32);
-
+    //マップの描画
+    field.draw();
+    // ブロックの描画
+    drawObj(block);
+    // アイテムの描画
+    drawObj(item);
+    // マリオの描画
+    ojisan.draw();
+    
     vcon.fillStyle = "white";
     vcon.fillText("frame"+frameCount,10,10);
 
@@ -58,7 +112,6 @@ function draw()
 }
 
 // 秒間60フレーム(1秒間に６０回)でメインループさせる。 
-// setInterval(mainLoop,1000/60);
 // htmlを読み終えたらオンロード内の処理を実行
 window.onload = function()
 {
@@ -87,3 +140,24 @@ function mainLoop()
     }
     requestAnimationFrame(mainLoop);
 } 
+
+// キーボード操作
+let key = {};
+
+document.onkeydown = function(e)
+{
+    if(e.keyCode === 37)key.Left = true;
+    if(e.keyCode === 39)key.Right = true;
+    if(e.keyCode === 90)key.Abutton = true;
+    if(e.keyCode === 88)key.Bbutton = true;
+    if(e.keyCode === 65)field.scx--;
+    if(e.keyCode === 83)field.scx++;
+}   
+
+document.onkeyup = function(e)
+{
+    if(e.keyCode === 37)key.Left = false;
+    if(e.keyCode === 39)key.Right = false;
+    if(e.keyCode === 90)key.Abutton = false;
+    if(e.keyCode === 88)key.Bbutton = false;
+}   
